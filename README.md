@@ -93,11 +93,12 @@ Add asynchronous support using aiohttp for faster crawling.
 Include multi-page scraping with pagination detection.
 Add a graphical interface (GUI) for non-technical users.
 Support for exporting results in CSV or JSON formats.
+
 📄 License
 This project is open-source and available under the MIT License.
 
-👨‍💻 Author
-Andrés Felipe Garcia Rendon
-GitHub: @andres0191
-LinkedIn: linkedin.com/in/anfegar
+👨‍💻 Author: [Andrés Felipe Garcia Rendon](https://linkedin.com/in/anfegar)
+📂 GitHub: [GitHub @andres0191](https://github.com/andres0191)
+✉️ Email: [email ](mailto:felipe.garcia0191@gmail.com)
+
 
