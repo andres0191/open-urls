@@ -1,86 +1,142 @@
-import time
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
-import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+import pandas as pd
+import time
+from urllib.parse import urlparse
 
-def iniciar_driver():
-    """Inicializa Selenium con configuración sin interfaz (headless)."""
-    opciones = Options()
-    opciones.add_argument("--headless=new")
-    opciones.add_argument("--disable-gpu")
-    opciones.add_argument("--no-sandbox")
-    opciones.add_argument("--log-level=3")
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=opciones)
+# ==============================
+# CONFIGURACIÓN
+# ==============================
 
+# 🔹 Dominios a excluir (puedes agregar o quitar según necesites)
+DOMINIOS_EXCLUIDOS = [
+    # Redes sociales
+    "facebook.com", "fb.com", "instagram.com", "threads.net",
+    "twitter.com", "x.com", "t.co", "linkedin.com",
+    "tiktok.com", "snapchat.com", "pinterest.com", "tumblr.com",
+    "reddit.com", "discord.com", "discord.gg",
+    "whatsapp.com", "telegram.org", "messenger.com",
+    "wechat.com", "weibo.com", "line.me", "vk.com",
 
-def obtener_html(url, driver):
-    """Obtiene el HTML ya renderizado con JS usando Selenium."""
+    # Buscadores
+    "google.com", "google.es", "google.co", "googleusercontent.com",
+    "bing.com", "yahoo.com", "duckduckgo.com",
+    "baidu.com", "ask.com", "aol.com", "yandex.ru",
+
+    # Empresas tecnológicas
+    "microsoft.com", "live.com", "office.com", "outlook.com",
+    "windows.com", "azure.com", "xbox.com",
+    "apple.com", "icloud.com", "mac.com", "me.com",
+    "amazon.com", "aws.amazon.com", "primevideo.com", "audible.com",
+    "adobe.com", "dropbox.com", "slack.com", "zoom.us",
+    "notion.so", "asana.com", "trello.com", "figma.com",
+    "canva.com", "spotify.com", "netflix.com", "hbo.com", "disneyplus.com",
+
+    # Navegadores y software
+    "mozilla.org", "firefox.com", "chrome.com", "opera.com",
+    "brave.com", "safari.com", "edge.com", "vivaldi.com", "torproject.org",
+
+    # Plataformas de video
+    "youtube.com", "youtu.be", "vimeo.com", "twitch.tv",
+    "dailymotion.com", "rumble.com", "bitchute.com",
+
+    # IA y educación
+    "openai.com", "chat.openai.com", "anthropic.com", "claude.ai",
+    "perplexity.ai", "deepmind.com", "coursera.org", "edx.org",
+    "udemy.com", "khanacademy.org", "wikipedia.org",
+
+    # Bancos y pagos
+    "paypal.com", "stripe.com", "squareup.com", "wise.com",
+    "revolut.com", "binance.com", "coinbase.com", "mercadopago.com",
+
+    # Publicidad y analítica
+    "doubleclick.net", "googletagmanager.com", "google-analytics.com",
+    "ads.google.com", "adservice.google.com",
+    "meta.com", "pixel.facebook.com", "analytics.yahoo.com"
+]
+
+# ==============================
+# FUNCIONES PRINCIPALES
+# ==============================
+
+def obtener_html(url):
+    """Intenta obtener el HTML con requests; si hay contenido dinámico, usa Selenium."""
     try:
-        driver.get(url)
-        time.sleep(2)
-        return driver.page_source
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10)
+        # Detecta si hay JS
+        if "<script" in response.text or "javascript" in response.text.lower():
+            print("⚙️ Página con JavaScript detectada, usando Selenium...")
+            return obtener_html_selenium(url)
+        return response.text
     except Exception as e:
-        print(f"❌ Error al cargar {url}: {e}")
-        return None
+        print(f"⚠️ Error con requests: {e}, intentando con Selenium...")
+        return obtener_html_selenium(url)
 
 
-def extraer_enlaces(url_inicial):
-    """Extrae todos los enlaces únicos por dominio raíz."""
-    driver = iniciar_driver()
-    enlaces_visitados = set()
-    dominios_guardados = set()
-    paginas_por_visitar = [url_inicial]
+def obtener_html_selenium(url):
+    """Usa Selenium para obtener el HTML renderizado (cuando hay JavaScript)."""
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
 
-    while paginas_por_visitar:
-        pagina_actual = paginas_por_visitar.pop(0)
-        print(f"🔎 Visitando: {pagina_actual}")
-
-        try:
-            html = obtener_html(pagina_actual, driver)
-            if not html:
-                resp = requests.get(pagina_actual, timeout=10)
-                html = resp.text if resp.status_code == 200 else None
-            if not html:
-                continue
-
-            soup = BeautifulSoup(html, "html.parser")
-
-            for a in soup.find_all("a", href=True):
-                link = urljoin(pagina_actual, a["href"])
-                dominio = urlparse(link).netloc  # ejemplo: "www.co.delaware.in.us"
-
-                # ✅ solo guardar el primer enlace de cada dominio raíz
-                if dominio and dominio not in dominios_guardados:
-                    dominios_guardados.add(dominio)
-                    enlaces_visitados.add(link)
-                    print(f"  ➜ Guardado (nuevo dominio): {link}")
-
-                    # Detectar posibles enlaces de paginación
-                    if "page" in link or "p=" in link or link.endswith(tuple("0123456789")):
-                        paginas_por_visitar.append(link)
-
-            time.sleep(1)
-
-        except Exception as e:
-            print(f"⚠️ Error procesando {pagina_actual}: {e}")
-
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver.get(url)
+    time.sleep(5)
+    html = driver.page_source
     driver.quit()
-    return enlaces_visitados
+    return html
 
+
+def es_enlace_valido(url):
+    """Verifica que el enlace sea válido y no pertenezca a dominios excluidos."""
+    try:
+        dominio = urlparse(url).netloc.lower()
+        return url.startswith("http") and not any(excluido in dominio for excluido in DOMINIOS_EXCLUIDOS)
+    except:
+        return False
+
+
+def extraer_enlaces(url):
+    print(f"\n🔍 Analizando: {url}")
+    html = obtener_html(url)
+    soup = BeautifulSoup(html, "html.parser")
+
+    enlaces = set()
+    for a in soup.find_all("a", href=True):
+        link = a["href"]
+        if es_enlace_valido(link):
+            enlaces.add(link)
+
+    print(f"✅ Se encontraron {len(enlaces)} enlaces válidos (sin dominios excluidos).")
+    return list(enlaces)
+
+
+def exportar_excel(enlaces, archivo):
+    """Exporta la lista de enlaces a un archivo Excel."""
+    df = pd.DataFrame(enlaces, columns=["Enlaces"])
+    df.to_excel(archivo, index=False)
+    print(f"📁 Enlaces guardados en: {archivo}")
+
+
+# ==============================
+# EJECUCIÓN PRINCIPAL
+# ==============================
 
 if __name__ == "__main__":
-    url_inicial = input("🌐 Ingresa la URL inicial: ").strip()
-    todos_los_enlaces = extraer_enlaces(url_inicial)
+    print("🌐 EXTRACTOR DE ENLACES CON FILTRO DE DOMINIOS\n")
+    URL = input("👉 Ingresa la URL que deseas analizar: ").strip()
 
-    # --- Guardar resultados en Excel ---
-    df = pd.DataFrame(list(todos_los_enlaces), columns=["Enlaces únicos por dominio raíz"])
-    nombre_excel = "enlaces_unicos.xlsx"
-    df.to_excel(nombre_excel, index=False)
+    if not URL.startswith("http"):
+        URL = "https://" + URL
 
-    print(f"\n✅ Total de dominios únicos encontrados: {len(todos_los_enlaces)}")
-    print(f"📊 Archivo Excel generado: {nombre_excel}")
+    enlaces = extraer_enlaces(URL)
+    if enlaces:
+        exportar_excel(enlaces, "enlaces_extraidos.xlsx")
+    else:
+        print("⚠️ No se encontraron enlaces válidos.")
