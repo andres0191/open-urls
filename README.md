@@ -98,7 +98,10 @@ Support for exporting results in CSV or JSON formats.
 This project is open-source and available under the MIT License.
 
 👨‍💻 Author: [Andrés Felipe Garcia Rendon](https://linkedin.com/in/anfegar)
+
 📂 GitHub: [GitHub @andres0191](https://github.com/andres0191)
+
 ✉️ Email: [email ](mailto:felipe.garcia0191@gmail.com)
+
 
 
