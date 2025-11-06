@@ -2,7 +2,7 @@
 
 ## Overview
 **Open URLs Crawler** is a Python-based web scraper designed to extract all unique hyperlinks from a given website.  
-It intelligently filters out duplicate links that share the same root domain and excludes unwanted domains such as major social networks or common platforms (e.g., Google, YouTube, Microsoft, etc.).
+It intelligently filters out duplicate links that share the same root domain.
 
 This tool combines the power of **Selenium** for JavaScript-rendered pages and **BeautifulSoup** for parsing static HTML content.  
 The final output is neatly saved into an Excel file for easy review and data management.
@@ -11,8 +11,6 @@ The final output is neatly saved into an Excel file for easy review and data man
 ## 🚀 Features
 
 - Extracts all unique hyperlinks (`<a href="...">`) from any website.
-- Automatically ignores repeated links sharing the same domain root.
-- Skips irrelevant or common domains (Google, YouTube, Microsoft, etc.).
 - Supports both **JavaScript-heavy** and **static HTML** sites.
 - Exports results automatically to an **Excel (.xlsx)** file.
 - User can input the target URL directly from the console.
@@ -70,23 +68,6 @@ Enter the URL to crawl: https://www.mercadolibre.com.co/
 The results will be saved in:
 
 output_links.xlsx
-🧹 Example of Excluded Domains
-The crawler ignores these (and similar) domains automatically:
-
-
-google.com
-youtube.com
-facebook.com
-instagram.com
-twitter.com
-linkedin.com
-microsoft.com
-bing.com
-mozilla.org
-yahoo.com
-reddit.com
-tiktok.com
-apple.com
 
 🧠 Future Improvements
 Add asynchronous support using aiohttp for faster crawling.
